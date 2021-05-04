@@ -1,0 +1,106 @@
+SELECT * FROM KOPO_CHANNEL_RESULT
+
+
+--  A01지역의 가장 많이 판 거래처의 TOP3상품
+SELECT AP2ID,
+       PRODUCT,
+       SUM(QTY)
+FROM
+KOPO_CHANNEL_RESULT
+WHERE ACCOUNTID = 5004878 -- 가장 많이 판매한 ACCOUNTID
+GROUP BY AP2ID,PRODUCT
+ORDER BY SUM(QTY) DESC
+
+
+
+SELECT AP2ID, ACCOUNTID, PRODUCTGROUP, SUM(QTY)
+FROM KOPO_CHANNEL_RESULT
+WHERE ACCOUNTID IN(
+    SELECT ACCOUNTID FROM (
+    SELECT ACCOUNTID, SUM(QTY) AS SUM_QTY
+    FROM KOPO_CHANNEL_RESULT
+    WHERE 1=1
+    AND AP2ID = 'A01'
+    GROUP BY ACCOUNTID
+    HAVING SUM(QTY) IN (
+    SELECT MAX(SUM_QTY)
+    FROM(
+       ---? A01지역의 가장 많이 판매한 거래처의 TOP3 상품(PRODUCTGROUP)이 무엇인지?
+        SELECT AP2ID, ACCOUNTID, SUM(QTY) AS SUM_QTY
+        FROM KOPO_CHANNEL_RESULT
+        WHERE 1=1
+        AND AP2ID = 'A01'
+        GROUP BY AP2ID, ACCOUNTID
+        ORDER BY SUM(QTY)DESC
+    ) )
+    ORDER BY SUM(QTY)DESC )
+)
+GROUP BY AP2ID, ACCOUNTID, PRODUCTGROUP
+
+
+
+
+SELECT ACCOUNTID
+FROM(
+    SELECT A.*,
+            ROW_NUMBER() OVER(ORDER BY SUM_QTY DESC) AS RANK
+    FROM(
+        SELECT AP2ID, ACCOUNTID, SUM(QTY) AS SUM_QTY
+            FROM KOPO_CHANNEL_RESULT
+            WHERE 1=1
+            AND AP2ID = 'A01'
+            GROUP BY AP2ID, ACCOUNTID
+            ORDER BY SUM(QTY)DESC
+    ) A
+)B
+WHERE 1=1
+AND RANK BETWEEN 1 AND 3
+
+
+
+
+
+
+
+
+
+
+
+---- 서브쿼리(쿼리 안에 쿼리)
+---- SELECT * FROM 테이블명 ->
+------ SELECT A.* FROM (셀렉트 쿼리)A
+
+
+    
+    
+    
+    
+    
+    
+    
+SELECT B.REGIONID, B.PRODUCT, B.YEARWEEK, B.QTY FROM
+(
+    SELECT A.REGIONID,
+    A.PRODUCT,
+    A.YEARWEEK,
+    SUBSTR(A.YEARWEEK,0,4) AS YEAR,
+    SUBSTR(A.YEARWEEK,5,6) AS WEEK,
+    A.QTY
+    FROM KOPO_CHANNEL_SEASONALITY_NEW A
+    WHERE 1=1
+)B
+WHERE B.WEEK != '53'
+
+EDIT NO_EVENT_REGIONID_JG
+
+
+
+-- STEP1: 법인/거래처별로 합계(판매량)을 구한다.
+-- STEP2: 가장 많이 판매한 거래처를 찾는다. (단, A01 지역만)
+-- STEP3: 지역/거래/상품별 합계(판매량)을 조회하면서 거래처는
+            -- 가장 많이 판매한 거래처만 남긴다.
+            
+
+        
+ 
+
